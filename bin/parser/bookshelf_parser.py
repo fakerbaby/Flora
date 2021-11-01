@@ -55,7 +55,7 @@ import sys
 import re
 import json
 from pathlib import Path
-from scipy.sparse import csr_matrix, csc_matrix, lil_matrix, save_npz, load_npz
+from scipy.sparse import csc_matrix, lil_matrix, save_npz
 
 # load benchmark and parser to a 'bookshelf' file
 # read .net dataset and capture the key information.
@@ -79,6 +79,7 @@ def load_data(path):
         data = f.read()
     return data
 
+
 def save_dict_as_json(dictionary: dict, savepath: Path):
     """ save dictionary as json file
     Args: 
@@ -95,7 +96,8 @@ def save_dict_as_json(dictionary: dict, savepath: Path):
     with open(savepath, 'w') as f:
         f.write(json_str)
 
-def extract_nodes_info(nodefilepath:Path) -> list:
+
+def extract_nodes_info(nodefilepath: Path) -> list:
     """
     extract all nodes' name as a list
     Args:
@@ -111,7 +113,6 @@ def extract_nodes_info(nodefilepath:Path) -> list:
         terminal_number_regex = re.compile(r'NumTerminals\s*:\s*(\d+)\s+')
         node_num = int(re.findall(node_number_regex, info)[0])
         term_num = int(re.findall(terminal_number_regex, info)[0])
-
         node_regex = re.compile(r'\s+(o\d+)\s+\d+\s+\d+')
         node_info = re.findall(node_regex, info)
     return node_info, node_num, term_num
@@ -136,7 +137,8 @@ def extract_net_info(net_file_path: Path) -> list:
         subnet.pop(0)
     return subnet, net_num, pin_num
 
-def extract_nodes_in_subnets(self, subnets: list) -> tuple:
+
+def extract_nodes_in_subnets(subnets: list) -> tuple:
     """ extract root cell name and adjacent cell name correlating with root cell in each subnet
     Args:
         subnets: a list of subnets in which each element is a string including all info of subnet
@@ -145,23 +147,20 @@ def extract_nodes_in_subnets(self, subnets: list) -> tuple:
         all_adjacent_cell: list of adjacent cell name
         total_pin: total_pins
     """
-    if len(subnets) == self.net_num:
-        print("NumNets is right, start extracting nodes in subnets")
-        all_root_cell = []
-        all_adjacent_cell = []
-        adjacent_cell_regex = re.compile(r'o\d+')
-        total_pin = 0
-        pin_regex = re.compile(r'\s*(\d+)\s+n')
-        for subnet_info in subnets:
-            total_pin += int(re.findall(pin_regex, subnet_info)[0])
-            connected_cell = re.findall(adjacent_cell_regex, subnet_info)
-            root_cell = connected_cell[0]
-            adjacent_cell = connected_cell[1:]
-            all_root_cell.append(root_cell)
-            all_adjacent_cell.append(adjacent_cell)
-    else:
-        print("split subnet wrong,extracting nodes in subnets fail")
-        sys.exit()
+    
+    print("start extracting nodes in subnets")
+    all_root_cell = []
+    all_adjacent_cell = []
+    adjacent_cell_regex = re.compile(r'o\d+')
+    total_pin = 0
+    pin_regex = re.compile(r'\s*(\d+)\s+n')
+    for subnet_info in subnets:
+        total_pin += int(re.findall(pin_regex, subnet_info)[0])
+        connected_cell = re.findall(adjacent_cell_regex, subnet_info)
+        root_cell = connected_cell[0]
+        adjacent_cell = connected_cell[1:]
+        all_root_cell.append(root_cell)
+        all_adjacent_cell.append(adjacent_cell)
     return all_root_cell, all_adjacent_cell, total_pin
 
 
@@ -169,11 +168,12 @@ class BookshelfParser:
     """
     This module is mainly to exract some basic information of netlist 
     from .bookshelf file, and map them into a sparse matrix.
-    
+
     Attributes: 
         net_path: 
         node_path:
     """
+
     def __init__(self):
         print("===============bookshelf_parser=================")
         self.node2matrix_mapper = dict()
@@ -199,10 +199,10 @@ class BookshelfParser:
         # load .node file and .net file
         print("loading benchmarks...")
         self.net_info, self.net_num, self.pin_num = extract_net_info(net_path)
-        self.node_info, self.net_num, self.term_num = extract_nodes_info(node_path)
-        
-        
-    def net_to_matrix(self, sparseMatrixFile:Path, cellName2MatrixIndex:Path):
+        self.node_info, self.net_num, self.term_num = extract_nodes_info(
+node_path)
+
+    def net_to_matrix(self, sparseMatrixFile: Path, cellName2MatrixIndex: Path):
         """ convert the benchmark to an sparse adjcent Matrix
         Args:
             nodefilepath:
@@ -225,22 +225,22 @@ class BookshelfParser:
         # initialize sparse matrix with all elements 0
         sparse_matrix = lil_matrix((self.node_num, self.node_num))
 
-   
         # extract connected cells in each subnet
-        root, adjacent, total_pin = self.extract_nodes_in_subnets(self.net_info)
+        root, adjacent, total_pin = extract_nodes_in_subnets(self.net_info)
 
         # get final sparse matrix
         for x, adj in zip(root, adjacent):
             for y in adj:
-                sparse_matrix[self.node2matrix_mapper[x], self.node2matrix_mapper[y]] += 1
-                sparse_matrix[self.node2matrix_mapper[y], self.node2matrix_mapper[x]] += 1
+                sparse_matrix[self.node2matrix_mapper[x],
+                              self.node2matrix_mapper[y]] += 1
+                sparse_matrix[self.node2matrix_mapper[y],
+                              self.node2matrix_mapper[x]] += 1
         if total_pin != self.pin_num:
-            print(f"all connected cell number is not {self.pin_num}, can't save sparse matrix right now.")
-            exit()
+            print(
+                f"all connected cell number is not {self.pin_num}, can't save sparse matrix right now.")
+            sys.exit()
         else:
             print("NumPins is good,start saving sparse matrix")
             # save sparse matrix
             sparse_matrix = csc_matrix(sparse_matrix)
             save_npz(sparseMatrixFile, sparse_matrix)
-
-    
