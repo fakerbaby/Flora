@@ -12,3 +12,6 @@ EvolutionPlacer is an EDA tool that help the designer to design a feasible chip 
 
 
 The right way to code our project,please refer to the [Google style guides](https://google.github.io/styleguide/pyguide.html)
+
+Chinese version:[Google开源项目Python风格规范指南](https://zh-google-styleguide.readthedocs.io/en/latest/google-python-styleguide/python_style_rules/)
+

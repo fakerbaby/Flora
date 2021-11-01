@@ -51,8 +51,9 @@
 #       Constructing Large Sparse Matrices: coo_matrix
 
 
-import os
+import sys
 import re
+import json
 from pathlib import Path
 from scipy.sparse import csr_matrix, csc_matrix, lil_matrix, save_npz, load_npz
 
@@ -70,128 +71,176 @@ from scipy.sparse import csr_matrix, csc_matrix, lil_matrix, save_npz, load_npz
 #                            benchmark_name[0], 'bookshelf', dataset[0]+'.npz')
 
 
+def load_data(path):
+    """
+    a basic function to load data
+    """
+    with open(path, 'r') as f:
+        data = f.read()
+    return data
+
+def save_dict_as_json(dictionary: dict, savepath: Path):
+    """ save dictionary as json file
+    Args: 
+        dictionary : the source
+        savepath: the directory of target file
+    Returns: 
+        None
+    Raise: 
+        IOError: An error occurred accessing the savepath
+    """
+    # create path if not exist
+    savepath.parent.mkdir(parents=True, exist_ok=True)
+    json_str = json.dumps(dictionary)
+    with open(savepath, 'w') as f:
+        f.write(json_str)
+
+def extract_nodes_info(nodefilepath:Path) -> list:
+    """
+    extract all nodes' name as a list
+    Args:
+        nodefilepath: the directory of node file
+    Returns:
+        node_info: a list consists name of all nodes
+        node_num:
+        term_num:
+    """
+    with open(nodefilepath, 'r')as f:
+        info = f.read()
+        node_number_regex = re.compile(r'NumNodes\s*:\s*(\d+)\s+')
+        terminal_number_regex = re.compile(r'NumTerminals\s*:\s*(\d+)\s+')
+        node_num = int(re.findall(node_number_regex, info)[0])
+        term_num = int(re.findall(terminal_number_regex, info)[0])
+
+        node_regex = re.compile(r'\s+(o\d+)\s+\d+\s+\d+')
+        node_info = re.findall(node_regex, info)
+    return node_info, node_num, term_num
+
+
+def extract_net_info(net_file_path: Path) -> list:
+    """
+    extract net information as list where each element is a subnet
+    Args:
+        net_file_path: the directory of net file
+    Returns:
+        subnet: subnets info list, each element is a string of subnets info
+        net_num:
+        pin_num:
+    """
+    with open(net_file_path, 'r') as f:
+        netlist = f.read()
+        net_num = int(re.findall(r'NumNets\s*:\s*(\d+)', netlist)[0])
+        pin_num = int(re.findall(r'NumPins\s*:\s*(\d+)', netlist)[0])
+        subnet_regex = re.compile(r'NetDegree\s*:')
+        subnet = re.split(subnet_regex, netlist)
+        subnet.pop(0)
+    return subnet, net_num, pin_num
+
+def extract_nodes_in_subnets(self, subnets: list) -> tuple:
+    """ extract root cell name and adjacent cell name correlating with root cell in each subnet
+    Args:
+        subnets: a list of subnets in which each element is a string including all info of subnet
+    Returns:
+        all_root_cell: list of root cell name
+        all_adjacent_cell: list of adjacent cell name
+        total_pin: total_pins
+    """
+    if len(subnets) == self.net_num:
+        print("NumNets is right, start extracting nodes in subnets")
+        all_root_cell = []
+        all_adjacent_cell = []
+        adjacent_cell_regex = re.compile(r'o\d+')
+        total_pin = 0
+        pin_regex = re.compile(r'\s*(\d+)\s+n')
+        for subnet_info in subnets:
+            total_pin += int(re.findall(pin_regex, subnet_info)[0])
+            connected_cell = re.findall(adjacent_cell_regex, subnet_info)
+            root_cell = connected_cell[0]
+            adjacent_cell = connected_cell[1:]
+            all_root_cell.append(root_cell)
+            all_adjacent_cell.append(adjacent_cell)
+    else:
+        print("split subnet wrong,extracting nodes in subnets fail")
+        sys.exit()
+    return all_root_cell, all_adjacent_cell, total_pin
+
+
 class BookshelfParser:
     """
-    This Module is mainly to parser Bookshelf into a sparse matrix
+    This module is mainly to exract some basic information of netlist 
+    from .bookshelf file, and map them into a sparse matrix.
+    
+    Attributes: 
+        net_path: 
+        node_path:
     """
     def __init__(self):
         print("===============bookshelf_parser=================")
-        self.data = {} 
+        self.node2matrix_mapper = dict()
+        self.node_info = None
+        self.net_info = None
+        self.term_num = 0
+        self.node_num = 0
+        self.net_num = 0
+        self.pin_num = 0
 
-    def load_data(self, dataset):
-        """"
-        
-        """"
-        print("load the benchmarks...")
+    def load_data(self, net_path: Path, node_path: Path):
+        """
+        this part is to load data from .bookshelf file
+        Args:
+            net_path: path to .net file
+            node_path: path to .node file
+        Returns: 
+            net_bm: .net data
+            node_bm: .node data
+        Rasie:
+            IOError: An error occurred accessing the net_path & node_path
+        """
         # load .node file and .net file
-        with open(net_path, 'r') as f:
-            benchmark = f.read()
-        with open(node_path, 'r') as f:
-            node_benchmark = f.read()
+        print("loading benchmarks...")
+        self.net_info, self.net_num, self.pin_num = extract_net_info(net_path)
+        self.node_info, self.net_num, self.term_num = extract_nodes_info(node_path)
         
         
-    def capture_key_parameter(self):
-        """ read info from .net file and .node file
-        store the net file path & the node file path of benchmark
-        use dictionary data to store the key parameter from benchmark
-        :param: None
-        :return:
-            "param row": a Integer list carrying the core_node
-            "param column": a Integer list carrying the adjcent_node
-        """
-        
-
-        # capture the parameter from the benchmark files
-        node_num_index = node_benchmark.find('NumNodes')
-        node_teminal_index = node_benchmark.find('NumTerminals')
-        node_num = node_benchmark[node_benchmark.find(
-            ':', node_num_index)+1: node_teminal_index]
-        node_teminal = int(node_benchmark[node_benchmark.find(
-            ':', node_teminal_index)+1: node_benchmark.find('\n', node_teminal_index)])
-        if node_num.isdigit():
-            node_num = int(node_num)
-        node_num = int(node_num[:-1])
-        self.data['NumNodes'] = node_num
-        self.data['NumTerminals'] = node_teminal
-        print("=========start to capture the key parameters========")
-        net_num_index = benchmark.find('NumNets')
-        net_pins_index = benchmark.find('NumPins')
-        num_nets = int(benchmark[benchmark.find(
-            ':', net_num_index) + 1: net_pins_index])
-        num_pins = int(benchmark[benchmark.find(
-            ':', net_pins_index) + 1: benchmark.find('\n', net_pins_index)])
-
-        self.data['NumNets'] = num_nets
-        self.data['NumPins'] = num_pins
-        row, column = [], []
-        net_degree_index = benchmark.find('NetDegree')
-        while True:
-            num_subnet_degrees = int(
-                benchmark[benchmark.find(':', net_degree_index) + 1: benchmark.find('n', net_degree_index)])
-            for sub_net_index in range(num_subnet_degrees):
-                if sub_net_index == 0:
-                    start_index = benchmark.find('\n', net_degree_index)
-                    end_index = benchmark.find('\n', start_index + 1)
-                    core_node_str = benchmark[start_index: end_index]
-                    # regex pattern to search
-                    pattern = re.compile(r'\d+\b')
-                    search = pattern.search(core_node_str)
-                    core_node = search.group(0)
-                else:
-                    start_index = benchmark.find('\n', end_index)
-                    end_index = benchmark.find('\n', start_index + 1)
-                    adjacent_node_str = benchmark[start_index: end_index]
-                    pattern = re.compile(r'\d+\b')
-                    search = pattern.search(adjacent_node_str)
-                    adjacent_node = search.group(0)
-                    column.append(int(adjacent_node))
-
-            for i in range(num_subnet_degrees - 1):
-                row.append(int(core_node))
-            net_degree_index = benchmark.find(
-                'NetDegree', net_degree_index + 1)
-            if net_degree_index == -1:
-                break
-        print("capture key paramters success!")
-        return row, column
-
-    def convert_to_matrix(self, row, column):
+    def net_to_matrix(self, sparseMatrixFile:Path, cellName2MatrixIndex:Path):
         """ convert the benchmark to an sparse adjcent Matrix
-        "param row": a Integer list carrying the core_node
-        "param column": a Integer list carrying the adjcent_node
-        :return: sparse_connectivity_matrix: each element represents the number of routes for corresponding cells
+        Args:
+            nodefilepath:
+            netfilepath:
+            sparseMatrixFile:
+            cellName2MatrixIndex:
+        Returns: 
+            sparse_connectivity_matrix: each element represents the number of routes for corresponding cells
         """
-        # sparse the matrix
-        # lil_matrix Fast Changing of Sparsity(eg. , adding entries to matrix)
-        num_nodes = self.data['NumNodes']
-        sparse_connectivity_matrix = lil_matrix((num_nodes, num_nodes))
-        for (i, j) in zip(row, column):
-            if i == j:
-                continue
-            sparse_connectivity_matrix[i, j] += 1
-            sparse_connectivity_matrix[j, i] += 1
-        # csc_matrix can faster arithmetics operations
-        print("start convert benchmark files into sparse matrix...")
-        sparse_connectivity_matrix = csc_matrix(sparse_connectivity_matrix)
-        print("convert success!")
-        return sparse_connectivity_matrix
+        # construct node2matrix_mapper dictionary
+        for i in enumerate(self.node_info):
+            self.node2matrix_mapper.setdefault(self.node_info[i], i)
+        if len(self.node2matrix_mapper) == self.node_num:
+            print("cell number = matrix index it's ok to save cellName2MatrixIndex")
+            save_dict_as_json(self.node2matrix_mapper, cellName2MatrixIndex)
+        else:
+            print("cell number not equal with matrix index, check the nodes file")
+            sys.exit()
 
-    def save_to_(self, data, target_path):
-        """ save to target files
-        "param data": sparse_connectivity_matrix
-        "param target_path": the path to taget file
-        """
-        print("==========saving=============")
-        print("start saving files, please wait for a few seconds......")
-        abspath = os.path.abspath(target_path)
-        print("data will be saved to", abspath)
-        save_npz(target_path, data)
-        print("data has been saved!")
-        print("=============bookshelf_parser===============")
+        # initialize sparse matrix with all elements 0
+        sparse_matrix = lil_matrix((self.node_num, self.node_num))
 
+   
+        # extract connected cells in each subnet
+        root, adjacent, total_pin = self.extract_nodes_in_subnets(self.net_info)
 
-if __name__ == '__main__':
-    test = bookshelf_parser()
-    row, col = test.capture_key_parameter()
-    data = test.convert_to_matrix(row, col)
-    test.save_to_(data, target_path)
+        # get final sparse matrix
+        for x, adj in zip(root, adjacent):
+            for y in adj:
+                sparse_matrix[self.node2matrix_mapper[x], self.node2matrix_mapper[y]] += 1
+                sparse_matrix[self.node2matrix_mapper[y], self.node2matrix_mapper[x]] += 1
+        if total_pin != self.pin_num:
+            print(f"all connected cell number is not {self.pin_num}, can't save sparse matrix right now.")
+            exit()
+        else:
+            print("NumPins is good,start saving sparse matrix")
+            # save sparse matrix
+            sparse_matrix = csc_matrix(sparse_matrix)
+            save_npz(sparseMatrixFile, sparse_matrix)
+
+    
