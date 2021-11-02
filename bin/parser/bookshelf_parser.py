@@ -237,10 +237,11 @@ class BookshelfParser:
             sparse_matrix = csc_matrix(sparse_matrix)
             save_npz(sparse_matrix_path, sparse_matrix)
 
-    def tostring(self):
-        print(self.term_num)
-        print(self.node_num)
-        print(self.net_num)
-        print(self.pin_num)
-        # print(self.node_info)
-        # print(self.net_info)
+    def monitor(self):
+        print("monitor the parser")
+        print("term_num:",self.term_num)
+        print("node_num:",self.node_num)
+        print("net_num:",self.net_num)
+        print("pin_num:",self.pin_num)
+        print("dict of mapper",self.node2matrix_mapper)
+ 
