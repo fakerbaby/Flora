@@ -133,7 +133,7 @@ dmypy.json
 
 
 #dataset
-*.net
+*.nets
 *.nodes
 *.npz
 *.json
