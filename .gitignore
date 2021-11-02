@@ -133,7 +133,5 @@ dmypy.json
 
 
 #dataset
-*.npz
-*.nets
-*.nodes
-*.json
+/benchmark
+/tmp
