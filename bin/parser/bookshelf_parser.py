@@ -53,22 +53,13 @@
 
 import sys
 import re
+import os
 import json
 from pathlib import Path
 from scipy.sparse import csc_matrix, lil_matrix, save_npz
 
 # load benchmark and parser to a 'bookshelf' file
 # read .net dataset and capture the key information.
-
-# benchmark_name = ['ispd2005', 'ispd2014', 'ispd2015', 'ispd2019']
-# dataset = ['adaptec1', 'adaptec2', 'adaptec3', 'adaptec4',
-#            'bigblue1', 'bigblue2', 'bigblue3', 'bigblue4']
-# net_path = os.path.join(os.getcwd(), 'benchmark',
-#                         benchmark_name[0], dataset[0]+'.nets')
-# node_path = os.path.join(os.getcwd(), 'benchmark',
-#                          benchmark_name[0], dataset[0]+'.nodes')
-# target_path = os.path.join(os.getcwd(), 'benchmark',
-#                            benchmark_name[0], 'bookshelf', dataset[0]+'.npz')
 
 
 def load_data(path):
@@ -91,7 +82,8 @@ def save_dict_as_json(dictionary: dict, savepath: Path):
         IOError: An error occurred accessing the savepath
     """
     # create path if not exist
-    savepath.parent.mkdir(parents=True, exist_ok=True)
+    if not os.path.exists(savepath):
+        os.makedirs(os.path.dirname(savepath))
     json_str = json.dumps(dictionary)
     with open(savepath, 'w') as f:
         f.write(json_str)
@@ -112,6 +104,7 @@ def extract_nodes_info(nodefilepath: Path) -> list:
         node_number_regex = re.compile(r'NumNodes\s*:\s*(\d+)\s+')
         terminal_number_regex = re.compile(r'NumTerminals\s*:\s*(\d+)\s+')
         node_num = int(re.findall(node_number_regex, info)[0])
+        print("node_num",node_num)
         term_num = int(re.findall(terminal_number_regex, info)[0])
         node_regex = re.compile(r'\s+(o\d+)\s+\d+\s+\d+')
         node_info = re.findall(node_regex, info)
@@ -199,25 +192,24 @@ class BookshelfParser:
         # load .node file and .net file
         print("loading benchmarks...")
         self.net_info, self.net_num, self.pin_num = extract_net_info(net_path)
-        self.node_info, self.net_num, self.term_num = extract_nodes_info(
-node_path)
+        self.node_info, self.node_num, self.term_num = extract_nodes_info(node_path)
 
-    def net_to_matrix(self, sparseMatrixFile: Path, cellName2MatrixIndex: Path):
+    def net_to_matrix(self, sparse_matrix_path: Path, node2matrix_path: Path):
         """ convert the benchmark to an sparse adjcent Matrix
         Args:
-            nodefilepath:
-            netfilepath:
-            sparseMatrixFile:
-            cellName2MatrixIndex:
+            sparse_matrix_path:
+            node2matrix_path:
         Returns: 
             sparse_connectivity_matrix: each element represents the number of routes for corresponding cells
         """
         # construct node2matrix_mapper dictionary
-        for i in enumerate(self.node_info):
-            self.node2matrix_mapper.setdefault(self.node_info[i], i)
+        for node in enumerate(self.node_info):
+            self.node2matrix_mapper.setdefault(node[1], node[0])
+        print("len",len(self.node2matrix_mapper))
+        print(self.node_num)
         if len(self.node2matrix_mapper) == self.node_num:
             print("cell number = matrix index it's ok to save cellName2MatrixIndex")
-            save_dict_as_json(self.node2matrix_mapper, cellName2MatrixIndex)
+            save_dict_as_json(self.node2matrix_mapper, node2matrix_path)
         else:
             print("cell number not equal with matrix index, check the nodes file")
             sys.exit()
@@ -243,4 +235,12 @@ node_path)
             print("NumPins is good,start saving sparse matrix")
             # save sparse matrix
             sparse_matrix = csc_matrix(sparse_matrix)
-            save_npz(sparseMatrixFile, sparse_matrix)
+            save_npz(sparse_matrix_path, sparse_matrix)
+
+    def tostring(self):
+        print(self.term_num)
+        print(self.node_num)
+        print(self.net_num)
+        print(self.pin_num)
+        # print(self.node_info)
+        # print(self.net_info)

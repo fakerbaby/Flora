@@ -130,3 +130,10 @@ dmypy.json
 
 #for mac
 *.DS_Store
+
+
+#dataset
+*.npz
+*.nets
+*.nodes
+*.json
