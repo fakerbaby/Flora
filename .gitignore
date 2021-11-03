@@ -137,4 +137,5 @@ dmypy.json
 *.nodes
 *.npz
 *.json
-*setup.py
+*.csv
+tmp/*
