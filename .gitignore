@@ -138,4 +138,5 @@ dmypy.json
 *.npz
 *.json
 *.csv
+*.pl
 tmp/*
