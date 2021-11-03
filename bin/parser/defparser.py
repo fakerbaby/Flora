@@ -1,6 +1,5 @@
 import re
 import json
-import time
 from pathlib import Path
 from scipy.sparse import csc_matrix, lil_matrix, save_npz
 from scipy.sparse.linalg import eigsh
