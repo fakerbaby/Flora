@@ -15,6 +15,11 @@ def generate_path(benchmark_name, dataset):
     return _net_path, _node_path, _first_mat_path
 
 
+def generate_pl_file(benchmark_name, dataset):
+    return os.path.join(os.path.join(BASE_DIR, "benchmark",
+                                     benchmark_name, dataset, dataset+".pl"))
+
+
 def generate_json_path(benchmark_name, dataset):
     _subnets_path = os.path.join(
         BASE_DIR, "tmp", benchmark_name, dataset, "bookshelf", dataset+"_subnet.json")
@@ -23,21 +28,26 @@ def generate_json_path(benchmark_name, dataset):
     return _subnets_path, _node2matrix_path
 
 
-def generate_cluster_file(benchmark_name, dataset):
-    return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "kmeans", dataset+".csv")
+def generate_ori_cluster_file(benchmark_name, dataset):
+    return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "cluster", dataset+"_ori.csv")
 
 
 def generate_modified_cluster_file(benchmark_name, dataset):
-    return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "kmeans", dataset+"modified.csv")
+    return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "cluster", dataset+"_mod.csv")
 
 
-def generate_pl_file(benchmark_name, dataset):
-    return os.path.join(os.path.join(BASE_DIR, "benchmark",
-                                     benchmark_name, dataset, dataset+".pl"))
+def generate_adjacent_path(benchmark_name, dataset):
+    return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "grouplevel", dataset+"_adj.csv" )
 
 
-net_path, node_path, first_mat_path = generate_path(BENCHMARK, DATASET)
-pl_path = generate_pl_file(BENCHMARK, DATASET)
-cluster_path = generate_cluster_file(BENCHMARK, DATASET)
-modified_cluster_path = generate_modified_cluster_file(BENCHMARK, DATASET)
-subnet_path, node2matrix_path = generate_json_path(BENCHMARK, DATASET)
+def generate_feature_mat_path(benchmark_name, dataset):
+    return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "grouplevel", dataset+"_fea_mat.csv" )
+
+
+NET_PATH, NODE_PATH, FIRST_MAT_PATH = generate_path(BENCHMARK, DATASET)
+PL_PATH = generate_pl_file(BENCHMARK, DATASET)
+ORI_CLUS_PATH = generate_ori_cluster_file(BENCHMARK, DATASET)
+MOD_CLUSTER_PATH = generate_modified_cluster_file(BENCHMARK, DATASET)
+SUB_NET_PATH, NODE2MAT_PATH = generate_json_path(BENCHMARK, DATASET)
+ADJ_PATH = generate_adjacent_path(BENCHMARK, DATASET)
+FEAT_MAT_PAT = generate_feature_mat_path(BENCHMARK, DATASET)

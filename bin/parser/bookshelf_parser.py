@@ -265,4 +265,4 @@ class BookshelfParser:
         print("net info:")
         print("core_cell_list:", self.core_cell_list[:10], "...")
         print("adjacent_cell_list:", self.adjacent_cell_list[:10], "...")
-        print("dict of mapper", self.node2matrix_mapper[:10])
+        print("dict of mapper", self.node2matrix_mapper)

@@ -1,10 +1,11 @@
 import os
 import json
 import numpy as np
+import pandas as pd
 from scipy.sparse import lil_matrix
 
 
-def establish_adjacent_matrix(feature):
+def calculate_adjacent_matrix(feature):
     """
     Calculate the adjacent matrix induced from the feature
     Args:
@@ -60,12 +61,39 @@ def load_ori_cluster(ori_cluster_path):
     return ori_cluster
 
 
-def save_modefied_cluster(path, new_cluster):
+def save_modefied_cluster(modified_cluster_path, new_cluster):
     """
+    Args:
+        modified_cluster_path:
+        new_cluster:
     """
-    np.savetxt(path, new_cluster, delimiter=',')  # save cluster
+    if not os.path.exists(os.path.dirname(modified_cluster_path)):
+        os.makedirs(os.path.dirname(modified_cluster_path))
+    np.savetxt(modified_cluster_path, new_cluster, delimiter=',')  # save cluster
 
 
+def save_adjacent_matrix(adjacent_matrix_path, adjacent_matrix):
+    """
+    Args:
+        adjacent_matrix_path:
+        adjacent_matrix:
+    """
+    if not os.path.exists(os.path.dirname(adjacent_matrix_path)):
+        os.makedirs(os.path.dirname(adjacent_matrix_path))
+    np.savetxt(adjacent_matrix_path, adjacent_matrix, delimiter=',')
+        
+
+def save_feature_matrix(feature_matrix_path, feature_matrix):
+    """
+    Args:
+        feature_matrix_path:
+        feature_matrix:
+    """
+    # with open(feature_matrix_path, 'w') as f:
+    if not os.path.exists(os.path.dirname(feature_matrix_path)):
+        os.makedirs(os.path.dirname(feature_matrix_path))
+    np.savetxt(feature_matrix_path, feature_matrix)
+    
 class GroupLevelParser:
     """
     Parser for Group Level
@@ -80,6 +108,8 @@ class GroupLevelParser:
         self.cluster_number = 0
         self.ori_cluster = None
         self.net_list = None
+        self.adjacent_matrix = None
+        self.feature_matrix = None
 
     def load_data(self, net_list_path, ori_cluster_path):
         """
@@ -92,7 +122,7 @@ class GroupLevelParser:
         ori_cluster = load_ori_cluster(ori_cluster_path)
         self.ori_cluster, self.net_list = ori_cluster, net_list
 
-    def modify_cluster(self, group_number, pl_path, modified_cluster_path):
+    def modify_cluster(self, pl_path, group_number):
         """
         This function is the major work of the GroupLevelParser do
         Args:
@@ -100,8 +130,6 @@ class GroupLevelParser:
             net_list: a list which composed of the subnet of nodes
             pl_path: the path to the .pl file
             group_number: the number of origin spectral clustering
-        Returns:
-
         """
         macro_list, macro_num = extract_macro(pl_path)
         # update the number of cluster
@@ -124,10 +152,20 @@ class GroupLevelParser:
 
         for i in range(self.cluster_number):
             feature[i, :] = feature[:, i]
-        save_modefied_cluster(modified_cluster_path, self.ori_cluster)
-        return feature
+        
+        self.adjacent_matrix = calculate_adjacent_matrix(feature)
+        self.feature_matrix = feature
 
+    def save_data(self, modified_cluster_path, adj_path, feature_path):
+        #save cluster
+        save_modefied_cluster(modified_cluster_path, self.ori_cluster)
+        #save adjacent matrix
+        save_adjacent_matrix(adj_path, self.adjacent_matrix)
+        #
+        save_feature_matrix(feature_path, self.feature_matrix)
+        
     def reduce_margin_node():
         """
         todo
         """
+        
