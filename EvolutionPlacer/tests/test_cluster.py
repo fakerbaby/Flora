@@ -6,6 +6,6 @@ from bin.cluster.spectral_cluster import load_data, spectral_cluster
 
 matrix_path = FIRST_MAT_PATH
 cluster_file = ORI_CLUS_PATH
-test = load_data(matrix_path)
 
+test = load_data(matrix_path)
 spectral_cluster(GROUP_NUM, matrix_path, cluster_file)

@@ -9,9 +9,10 @@ def calculate_adjacent_matrix(feature):
     """
     Calculate the adjacent matrix induced from the feature
     Args:
-        feature: a feature matrix
+        feature ([]): a feature matrix
+        
     Returns: 
-        adjacent: a matrix of the adjacent matrix produced by the feature
+        [type]: a matrix of the adjacent matrix produced by the feature
     """
     dimension = len(feature)
     adjacent = np.zeros((dimension, dimension))
@@ -26,10 +27,11 @@ def extract_macro(pl_path):
     Extract macros from .pl file and recognoze each one as a solo cluster.
     And then need to calculate the adjacent relationship with their neighbors. 
     Args:
-        pl_path: the path to the .pl files
+        pl_path ([]): the path to the .pl files
+        
     Returns:
-        macro_list: 
-        macro_num:
+        [type]: [description] 
+        [type]: [description]
     """
     macro_list = []
     with open(pl_path, mode='r') as f:
@@ -41,9 +43,13 @@ def extract_macro(pl_path):
 
 
 def load_net_list(net_list_path):
-    """
+    """[summary]
+
+    Args:
+        net_list_path ([type]): [description]
+
     Returns:
-        net_list: a dict
+        [type]: [description]
     """
     with open(net_list_path, 'r') as f:
         net_list = json.load(f)
@@ -51,10 +57,13 @@ def load_net_list(net_list_path):
 
 
 def load_ori_cluster(ori_cluster_path):
-    """
+    """[summary]
+
+    Args:
+        ori_cluster_path ([type]): [description]
 
     Returns:
-       ori_cluster: a list 
+        [type]: [description]
     """
     with open(ori_cluster_path, 'r') as f:
         ori_cluster = np.loadtxt(f, dtype=int, delimiter=',')
@@ -62,10 +71,11 @@ def load_ori_cluster(ori_cluster_path):
 
 
 def save_modefied_cluster(modified_cluster_path, new_cluster):
-    """
+    """[summary]
+
     Args:
-        modified_cluster_path:
-        new_cluster:
+        modified_cluster_path ([type]): [description]
+        new_cluster ([type]): [description]
     """
     if not os.path.exists(os.path.dirname(modified_cluster_path)):
         os.makedirs(os.path.dirname(modified_cluster_path))
@@ -73,10 +83,11 @@ def save_modefied_cluster(modified_cluster_path, new_cluster):
 
 
 def save_adjacent_matrix(adjacent_matrix_path, adjacent_matrix):
-    """
+    """[summary]
+
     Args:
-        adjacent_matrix_path:
-        adjacent_matrix:
+        adjacent_matrix_path ([type]): [description]
+        adjacent_matrix ([type]): [description]
     """
     if not os.path.exists(os.path.dirname(adjacent_matrix_path)):
         os.makedirs(os.path.dirname(adjacent_matrix_path))
@@ -84,10 +95,11 @@ def save_adjacent_matrix(adjacent_matrix_path, adjacent_matrix):
         
 
 def save_feature_matrix(feature_matrix_path, feature_matrix):
-    """
+    """[summary]
+
     Args:
-        feature_matrix_path:
-        feature_matrix:
+        feature_matrix_path ([type]): [description]
+        feature_matrix ([type]): [description]
     """
     # with open(feature_matrix_path, 'w') as f:
     if not os.path.exists(os.path.dirname(feature_matrix_path)):
@@ -96,7 +108,7 @@ def save_feature_matrix(feature_matrix_path, feature_matrix):
     
 class GroupLevelParser:
     """
-    Parser for Group Level
+    [  Parser for Group Level ]
     This parser module is mainly to parser the cluster level information into a new matrix, and we extract fixed cells(macro)
     from the cluster level information and recognize each of them as one cluster, which is the counterpart as the clusters produced by 
     spectral clustering algorithm. Considering the over-sparse matrix can not make the GAT model learn very well, so we need to modify
@@ -112,24 +124,24 @@ class GroupLevelParser:
         self.feature_matrix = None
 
     def load_data(self, net_list_path, ori_cluster_path):
-        """
+        """[summary]
+
         Args:
-
-        Returns:
-
+            net_list_path ([type]): [description]
+            ori_cluster_path ([type]): [description]
         """
         net_list = load_net_list(net_list_path)
         ori_cluster = load_ori_cluster(ori_cluster_path)
         self.ori_cluster, self.net_list = ori_cluster, net_list
 
-    def modify_cluster(self, pl_path, group_number):
+    def extend_cluster(self, pl_path, group_number):
         """
-        This function is the major work of the GroupLevelParser do
+        This function is one of the GroupLevelParser's major work   
         Args:
-            ori_cluster: the origin result file of the spectral clustering
-            net_list: a list which composed of the subnet of nodes
-            pl_path: the path to the .pl file
-            group_number: the number of origin spectral clustering
+            ori_cluster ([]): the origin result file of the spectral clustering
+            net_list ([]]): a list which composed of the subnet of nodes
+            pl_path ([]): the path to the .pl file
+            group_number ([]): the number of origin spectral clustering
         """
         macro_list, macro_num = extract_macro(pl_path)
         # update the number of cluster
@@ -157,6 +169,13 @@ class GroupLevelParser:
         self.feature_matrix = feature
 
     def save_data(self, modified_cluster_path, adj_path, feature_path):
+        """[summary]
+
+        Args:
+            modified_cluster_path ([type]): [description]
+            adj_path ([type]): [description]
+            feature_path ([type]): [description]
+        """
         #save cluster
         save_modefied_cluster(modified_cluster_path, self.ori_cluster)
         #save adjacent matrix
@@ -164,8 +183,8 @@ class GroupLevelParser:
         #
         save_feature_matrix(feature_path, self.feature_matrix)
         
-    def reduce_margin_node():
-        """
-        todo
-        """
+    
+    def modify_cluster(self):
+       #todo
         
+       
