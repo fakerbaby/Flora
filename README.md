@@ -18,4 +18,5 @@ Chinese version:[Google开源项目Python风格规范指南](https://zh-google-s
 At this primary period, we are focusing on physical placement in order to produce a fantastic initial position, besides, we want to train our totally new GAT model to learn the knwoledege that the larger distance between the cells, the less connected wires they supposed to have.
 
 The work we have done before can be briefly descriped as a flow chart below
-![Image](pic/pic.png)
+
+![Image](images/pic.png)
