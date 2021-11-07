@@ -1,8 +1,8 @@
 import os
 from _const import BASE_DIR, BENCHMARK, DATASET
 
-
-def generate_path(benchmark_name, dataset):
+#bookshelf related
+def generate_path(benchmark_name=BENCHMARK, dataset=DATASET):
     """
     generate the path to benchmarks
     """
@@ -14,13 +14,7 @@ def generate_path(benchmark_name, dataset):
                                    benchmark_name, dataset, "bookshelf", dataset+".npz")
     return _net_path, _node_path, _first_mat_path
 
-
-def generate_pl_file(benchmark_name, dataset):
-    return os.path.join(os.path.join(BASE_DIR, "benchmark",
-                                     benchmark_name, dataset, dataset+".pl"))
-
-
-def generate_json_path(benchmark_name, dataset):
+def generate_json_path(benchmark_name=BENCHMARK, dataset=DATASET):
     _subnets_path = os.path.join(
         BASE_DIR, "tmp", benchmark_name, dataset, "bookshelf", dataset+"_subnet.json")
     _node2matrix_path = os.path.join(
@@ -28,33 +22,41 @@ def generate_json_path(benchmark_name, dataset):
     return _subnets_path, _node2matrix_path
 
 
-def generate_ori_cluster_file(benchmark_name, dataset):
+#cluster related 
+def generate_ori_cluster_file(benchmark_name=BENCHMARK, dataset=DATASET):
     return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "cluster", dataset+"_ori.csv")
 
-
-def generate_extended_cluster_file(benchmark_name, dataset):
+def generate_extended_cluster_file(benchmark_name=BENCHMARK, dataset=DATASET):
     return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "cluster", dataset+"_ext.csv")
 
-def generate_modified_cluster_file(benchmark_name, dataset):
+def generate_modified_cluster_file(benchmark_name=BENCHMARK, dataset=DATASET):
     return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "cluster", dataset+"_mod.csv")
 
-def generate_adjacent_path(benchmark_name, dataset):
-    return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "grouplevel", dataset+"_adj.csv" )
-
-
-def generate_feature_mat_path(benchmark_name, dataset):
-    return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "grouplevel", dataset+"_fea_mat.csv" )
-
-#bookshelf related path
-NET_PATH, NODE_PATH, FIRST_MAT_PATH = generate_path(BENCHMARK, DATASET)
-SUB_NET_PATH, NODE2MAT_PATH = generate_json_path(BENCHMARK, DATASET)
-
-#cluster related path
-ORI_CLUS_PATH = generate_ori_cluster_file(BENCHMARK, DATASET)
-EXT_CLUS_PATH = generate_extended_cluster_file(BENCHMARK, DATASET)
-MOD_CLUS_PATH = generate_modified_cluster_file(BENCHMARK, DATASET)
+def generate_result_cluster_path(benchmark_name=BENCHMARK, dataset=DATASET):
+    return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "cluster", dataset+"_result1.csv" )
 
 #others
-PL_PATH = generate_pl_file(BENCHMARK, DATASET)
-ADJ_PATH = generate_adjacent_path(BENCHMARK, DATASET)
-FEAT_MAT_PAT = generate_feature_mat_path(BENCHMARK, DATASET)
+def generate_adjacent_path(benchmark_name=BENCHMARK, dataset=DATASET):
+    return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "grouplevel", dataset+"_adj.csv" )
+
+def generate_feature_mat_path(benchmark_name=BENCHMARK, dataset=DATASET):
+    return os.path.join(BASE_DIR, "tmp", benchmark_name, dataset, "grouplevel", dataset+"_fea_mat.csv" )
+
+def generate_pl_file(benchmark_name=BENCHMARK, dataset=DATASET):
+    return os.path.join(os.path.join(BASE_DIR, "benchmark",
+                                     benchmark_name, dataset, dataset+".pl"))
+
+
+#bookshelf related path
+NET_PATH, NODE_PATH, FIRST_MAT_PATH = generate_path()
+SUB_NET_PATH, NODE2MAT_PATH = generate_json_path()
+
+#cluster related path
+ORI_CLUS_PATH = generate_ori_cluster_file()
+EXT_CLUS_PATH = generate_extended_cluster_file()
+MOD_CLUS_PATH = generate_modified_cluster_file()
+RES_CLUS_PATH = generate_result_cluster_path()
+#others
+PL_PATH = generate_pl_file()
+ADJ_PATH = generate_adjacent_path()
+FEAT_MAT_PATH = generate_feature_mat_path()
