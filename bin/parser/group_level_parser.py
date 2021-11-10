@@ -106,6 +106,7 @@ def save_feature_matrix(feature_matrix_path, feature_matrix):
         os.makedirs(os.path.dirname(feature_matrix_path))
     np.savetxt(feature_matrix_path, feature_matrix, delimiter=',')
 
+
 def save_result_matrix(result_result_path, result_result):
     """[summary]
 
@@ -169,7 +170,9 @@ class GroupLevelParser:
             pl_path ([]): the path to the .pl file
             group_number ([]): the number of origin spectral clustering
         """
+        print("start to extend cluster...")
         macro_list, macro_num = extract_macro(pl_path)
+        print("extract macros succeed! There are {macro} macros".format(macro = macro_num))
         # update the number of cluster
         self.cluster_number = macro_num + group_number
         # generate a empty matrix
@@ -184,40 +187,17 @@ class GroupLevelParser:
                     feature[start_point, end_point] += 1
 
         for i in range(self.cluster_number):
-            for j in range(self.cluster_number):
-                feature[i][j] = feature[i][j] + feature[j][i]
-
+            for j in range(i, self.cluster_number):
+                feature[i,j] = feature[i,j] + feature[j,i]
         for i in range(self.cluster_number):
-            feature[i, :] = feature[:, i]
+            feature[:, i] = feature[i, :]
         
         self.adjacent_matrix = calculate_adjacent_matrix(feature)
         self.feature_matrix = feature
-        
- 
-    def add_conncetivity(self):
-        size = len(self.feature_matrix)
-        output_feature = np.zeros((size,size)) 
-        
-        one_step_con = []
-        two_step_con = []
-        com_adj = []
-        
-        for i in range(size):
-            num_1 = np.sum(self.feature_matrix[i]>0)
-            num_2 = np.sum(output_feature[i]>0)
-            adj_num = num_1 + num_2
+        print("extend cluster finished.")
             
-            if adj_num < self.expect_cluster_number:
-                # neighbor 
-                one_step_con = np.where(self.feature_matrix[i] > 0) 
-                for nei in one_step_con[0]:
-                    # neighbor's neighbor
-                    two_step_con.append(np.where(self.feature_matrix[i] > 0)) 
-        
-        # print(two_step_con)
-                  
-    
-    def establish_final_cluster(self):
+            
+    def establish_result_cluster(self):
         """[summary]
 
         Args:
@@ -234,19 +214,21 @@ class GroupLevelParser:
             Returns:
                 [type]: [description]
             """
-            update = [0] * len(one_has_adj)  # 记录更新后的cluster
-            drop = []
+            update = [0] * len(one_has_adj)  # record the updated cluster
+            drop = []                       #record the orphan cluster
             for i in range(len(one_has_adj)):
-                if self.cluster_number_record > expect_cluster and update[i] == 0:
-                    if neighbor[i] == one_has_adj[i]:
-                        #2 neighbor clusters -> 1 cluster    
-                        update[i] = one_has_adj[i]
-                        drop.append(neighbor[i])
-                        drop.append(one_has_adj[i])
-                        self.cluster_number_record -= 2
+                if self.cluster_number_record > expect_cluster and update[i] == 0: 
+                    if neighbor[i] == one_has_adj[i]: 
+                        #only 2-connectivity neighbor clusters -> 1 cluster, then drop it 
+                        # update[i] = one_has_adj[i]
+                        # drop.append(neighbor[i])
+                        # drop.append(one_has_adj[i])
+                        # self.cluster_number_record -= 2
+                        #todo
+                        pass
                     else:
                         update[i] = neighbor[i]
-                        drop.append(neighbor[i])
+                        drop.append(one_has_adj[i])
                         self.cluster_number_record -= 1
                 if self.cluster_number_record == expect_cluster:
                     return update, drop
@@ -257,6 +239,7 @@ class GroupLevelParser:
         one_nei_node_record = []
         result_cluster_record = []
         size = len(self.feature_matrix)
+        print("start to modify the feature matrix...")
         #find one-adj & zero-adj group cluster
         for row in range(size):
             tmp_list = []
@@ -268,22 +251,19 @@ class GroupLevelParser:
             if len(tmp_list) == 1:
                 one_adj_has_record.append(row)
                 one_nei_node_record.extend(tmp_list)  
-        # print("1",no_adj_record)
-        # print('2',one_adj_has_record)
-        # print('3',one_nei_node_record)
-        # self.one_adj_record = one_adj_record
-        # self.no_adj_record = no_adj_record
         self.cluster_number_record = self.cluster_number - len(no_adj_record)
         # assign expect_cluster number primarily is mainly to represent it as N^2 form, 
         # so that the matix can be a square.
-        square = int(np.sqrt(self.cluster_number_record))**2
-        self.expect_cluster_number = square
-        #one adjacent matrix qualify 
+        square = int(np.sqrt(self.cluster_number_record))
+        require = 0
+        for i in range(square,0,-1):
+            if self.cluster_number_record - len(one_adj_has_record) < i**2:
+                require = i**2
+                break        #one adjacent matrix qualify 
         #update cluster id
-        self.update_cluster, self.drop_cluster = modify_cluster(square, one_adj_has_record, one_nei_node_record)
-        print(self.update_cluster)
+        print("start to remove some orphan cluster or only on adj cluster...")
+        self.update_cluster, self.drop_cluster = modify_cluster(require, one_adj_has_record, one_nei_node_record)
         self.drop_cluster.extend(no_adj_record)
-        print(self.drop_cluster)
         
         #update cluster id
         for cluster in self.ori_cluster:
@@ -292,7 +272,6 @@ class GroupLevelParser:
             else:
                 result_cluster_record.append(cluster)
         self.result_cluster = result_cluster_record
-        print(len(result_cluster_record))
         
         #update adjacent matrix
         self.adjacent_matrix = np.delete(self.adjacent_matrix,self.drop_cluster,0)
@@ -300,8 +279,61 @@ class GroupLevelParser:
         #update feature matrix
         self.feature_matrix = np.delete(self.feature_matrix,self.drop_cluster,0)
         self.feature_matrix = np.delete(self.feature_matrix,self.drop_cluster,1)
-        print(len(self.feature_matrix),len(self.feature_matrix[1]))
         
+        
+    def add_conncetivity(self, threshold, weight_1, weight_2):
+        """[summary]
+
+        Args:
+            threshold ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
+        size = len(self.feature_matrix)
+        two_step_nei_feature = np.zeros((size,size))  #can record neighbor's neighbor
+        print("start to add connectivity to make the feature matrix desnser...")
+        for i in range(size):
+            two_step_nei = []
+            two_step_nei_list = []
+            com_neighbor = [] # record common neighbor
+            num_1 = np.sum(self.feature_matrix[i]>0)
+            num_2 = np.sum(two_step_nei_feature[i]>0)
+            adj_num = num_1 + num_2  # total neighbor cells of each cluster
+            if adj_num < threshold:
+                # neighbor 
+                one_step_nei = np.where(self.feature_matrix[i] > 0)     #one neighbor 
+                # print(one_step_nei)
+                for nei in one_step_nei[0]:
+                    # neighbor's neighbor
+                    two_step_nei.append(np.where(self.feature_matrix[nei] > 0))   #neighbor's neighbor
+                for _nei in range(len(two_step_nei)):
+                    two_step_nei_list.append(list(two_step_nei[_nei][0]))  #neighbor's neighbor convert to list([list],[list],...])
+                #set initialization
+                sum_com_set = set(two_step_nei[0][0])   
+                for nei in two_step_nei_list:
+                    sum_com_set = sum_com_set.intersection(set(nei))
+                    com_neighbor.extend(list(sum_com_set))  # 
+                sum_com_set = list(sum_com_set)
+                
+                com_neighbor = com_neighbor[1:]
+                com_neighbor = list(set(com_neighbor)) 
+                # others
+                if len(sum_com_set) + adj_num >= threshold: 
+                    sum_com_set = sum_com_set[0:threshold - adj_num] 
+                else:
+                    com_neighbor = com_neighbor[0:threshold - adj_num - len(sum_com_set)] 
+                
+                for x in range(len(sum_com_set)):
+                    two_step_nei_feature[i][sum_com_set[x]] = weight_1
+                    two_step_nei_feature[sum_com_set[x]][i] = weight_1
+                for y in range(len(com_neighbor)):
+                    if two_step_nei_feature[i][com_neighbor[y]] == 0:
+                        two_step_nei_feature[i][com_neighbor[y]] = weight_2
+                        two_step_nei_feature[com_neighbor[y]][i] = weight_2
+        self.feature_matrix = self.feature_matrix * 3 + two_step_nei_feature
+        print("feature matrix process finished!")
+        return self.feature_matrix    
         
         
     def save_data(self, modified_cluster_path, adj_path, feature_path, result_cluster_path):
@@ -312,6 +344,7 @@ class GroupLevelParser:
             adj_path ([type]): [description]
             feature_path ([type]): [description]
         """
+        print("saving...")
         #save cluster
         save_extended_cluster(modified_cluster_path, self.ori_cluster)
         #save adjacent matrix
@@ -320,3 +353,4 @@ class GroupLevelParser:
         save_feature_matrix(feature_path, self.feature_matrix)
         #
         save_result_matrix(result_cluster_path, self.result_cluster)
+        print("saved successfully!")

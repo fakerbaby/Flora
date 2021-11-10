@@ -12,5 +12,5 @@ BENCHMARK = benchmark[0] # choose the benchmark
 
 DATASET = dataset[0] # choose the dataset
 
-GROUP_NUM = 50
+GROUP_NUM = 100
 
