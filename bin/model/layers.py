@@ -6,42 +6,42 @@ from torch import nn
 class GraphAttentionLayer(nn.Module):
     """
        Simple GAT layer, similar to https://arxiv.org/abs/1710.10903
-       图注意力层
-       """
+    """
     def __init__(self, in_features, out_features, dropout, alpha, concat=True):
         super(GraphAttentionLayer, self).__init__()
-        self.in_features = in_features  # 节点表示向量的输入特征数
-        self.out_features = out_features  # 节点表示向量的输出特征数
-        self.dropout = dropout  # dropout参数
-        self.alpha = alpha  # leakyrelu激活的参数
-        self.concat = concat  # 如果为true, 再进行elu激活
-        # 定义可训练参数，即论文中的W和a, W means compact feature; a means how to calculate weight based on two feature
+        self.in_features = in_features  #  represent the number of input features of the vector
+        self.out_features = out_features  #  represent the number of output features of the vector
+        self.dropout = dropout  # dropout
+        self.alpha = alpha  # the parameter to acitivate leakyrelu
+        self.concat = concat  # the parameter to acitivate elu 
+        #  'W' means compact feature; 'a' means how to calculate weight based on two feature
         self.W = nn.Parameter(torch.zeros(size=(in_features, out_features)))
-        nn.init.xavier_uniform_(self.W.data, gain=1.414)  # 初始化
+        nn.init.xavier_uniform_(self.W.data, gain=1.414)  # initialization
         self.a = nn.Parameter(torch.zeros(size=(2 * out_features, 1)))
-        nn.init.xavier_uniform_(self.a.data, gain=1.414)  # 初始化
+        nn.init.xavier_uniform_(self.a.data, gain=1.414)  
+        
         self.leakyrelu = nn.LeakyReLU(self.alpha)
 
     def forward(self, inp, adj):
         """
-            inp: input_fea [N, in_features] N 结点个数  in_features表示节点的输入特征向量元素个数
-            adj: 图的邻接矩阵  [N, N] 非零即一
+        Args:
+            inp: input_fea [N, in_features] 'N' represents the number of nodes, 'in_features' represent the number of input features of the vector
+            adj: Adjacent matrix  [N, N] either Non-zero or one
         """
         h = torch.mm(inp, self.W)  # [N, out_features]
-        N = h.size()[0]  # N 图的节点数
+        N = h.size()[0]  # N 
         a_input = torch.cat([h.repeat(1, N).view(N * N, -1), h.repeat(N, 1)], dim=1).view(N, -1, 2 * self.out_features)
         # [N, N, 2*out_features]
         e = self.leakyrelu(torch.matmul(a_input, self.a).squeeze(2))
-        # [N, N, 1] => [N, N] 图注意力的相关系数（未归一化）
-        zero_vec = -1e12 * torch.ones_like(e)  # 将没有连接的边置为负无穷
+        # [N, N, 1] => [N, N] The coefficient of GraphAttentionLayer(Unnormalized) 
+        zero_vec = -1e12 * torch.ones_like(e)  # set non-connectivity node Non-infinity
         attention = torch.where(adj > 0, e, zero_vec)  # [N, N]
-        # 表示如果邻接矩阵元素大于0时，则两个节点有连接，该位置的注意力系数保留，
-        # 否则需要mask并置为非常小的值，原因是softmax的时候这个最小值会不考虑。
-        attention = nn.Softmax(dim=1)(attention)  # softmax形状保持不变 [N, N]，得到归一化的注意力权重！
+        # masked 
+        attention = nn.Softmax(dim=1)(attention)  # Normalized
         attention = nn.Dropout(p=self.dropout)(attention)
-        # attention = F.dropout(attention, self.dropout, training=self.training)  # dropout，防止过拟合
+        # attention = F.dropout(attention, self.dropout, training=self.training)  # use dropout to prohibit overfitting
         h_prime = torch.matmul(attention, h)  # [N, N].[N, out_features] => [N, out_features]
-        # 得到由周围节点通过注意力权重进行更新的表示
+        # Get the representation updated by the surrounding nodes through the attention weight
         if self.concat:
             return nn.ELU()(h_prime)
         else:
@@ -51,31 +51,38 @@ class GraphAttentionLayer(nn.Module):
 # multi-head
 class GATmulti_head(nn.Module):
     def __init__(self, n_feat, n_hid, n_class, dropout, alpha, n_heads):
-        """Dense version of GAT
-        n_heads 表示有几个GAT层，最后进行拼接在一起，类似self-attention
-        从不同的子空间进行抽取特征。
+        """
+        Dense version of GAT
+        Args:
+        n_heads: Indicates that there are several GAT layers, which are finally spliced ​​together, 
+        similar to multi-head attention. For extracting features from different dimensions
         """
         super(GATmulti_head, self).__init__()
         self.dropout = dropout
-        # 定义multi-head的图注意力层
+        # define multi-head GraphAttentionLayer
         self.attentions = [GraphAttentionLayer(n_feat, n_hid, dropout=dropout, alpha=alpha, concat=True) for _ in
                            range(n_heads)]
         for i, attention in enumerate(self.attentions):
-            self.add_module('attention_{}'.format(i), attention)  # 加入pytorch的Module模块
+            self.add_module('attention_{}'.format(i), attention)  
         # 输出层，也通过图注意力层来实现，可实现分类、预测等功能
         self.out_att = GraphAttentionLayer(n_hid * n_heads, n_class, dropout=dropout, alpha=alpha, concat=False)
 
     def forward(self, x, adj):
-        x = F.dropout(x, self.dropout, training=self.training)  # dropout，防止过拟合
+        x = F.dropout(x, self.dropout, training=self.training)  
         x = torch.cat([att(x, adj) for att in self.attentions], dim=1)  # 将每个head得到的表示进行拼接
-        x = F.dropout(x, self.dropout, training=self.training)  # dropout，防止过拟合
-        x = F.elu(self.out_att(x, adj))  # 输出并激活
+        x = F.dropout(x, self.dropout, training=self.training)  
+        x = F.elu(self.out_att(x, adj))  
         return x
         # return F.log_softmax(x, dim=1)  # log_softmax速度变快，保持数值稳定
 
 
 class SpecialSpmmFunction(torch.autograd.Function):
-    """Special function for only sparse region backpropataion layer."""
+    """Special function for only sparse region backpropataion layer.
+    To solve the issue that tough backpropataion problem of Sparse Matrix
+    # There are numerically instability because of softmax function. Therefore, you need to initialize carefully.
+    # To use sparse version GAT, add flag --sparse. The performance of sparse version is similar with tensorflow. On a Titan Xp takes 0.08~0.14 sec. 
+    # come from the https://github.com/Diego999/pyGAT
+    """
 
     @staticmethod
     def forward(ctx, indices, values, shape, b):
@@ -176,7 +183,6 @@ class multiGAT_2layer(nn.Module):
         gat1 = self.gat1(input_feature, adj)
         x = self.relu(gat1)
         gat2 = self.gat2(x, adj)
-
         return gat2
 
 

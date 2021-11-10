@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # !NEED CHANGE
     compact = 2  # the dimension of GAT compacted feature
     N = 900     # the node number
-
+    
     print("load model")
     loadModel()
     print("Done")

@@ -24,7 +24,7 @@ def calculate_adjacent_matrix(feature):
 
 def extract_macro(pl_path):
     """
-    Extract macros from .pl file and recognoze each one as a solo cluster.
+    Extract macros from .pl file and recognoze each one as a sole cluster.
     And then need to calculate the adjacent relationship with their neighbors. 
     Args:
         pl_path ([]): the path to the .pl files
@@ -127,7 +127,7 @@ class GroupLevelParser:
     This parser module is mainly to parser the cluster level information into a new matrix, and we extract fixed cells(macro)
     from the cluster level information and recognize each of them as one cluster, which is the counterpart as the clusters produced by 
     spectral clustering algorithm. Considering the over-sparse matrix can not make the GAT model learn very well, so we need to modify
-    the matrix by means of adding a few auxillary lines and merging solo marginal nodes to increase the density
+    the matrix by means of adding a few auxillary lines and merging sole marginal nodes to increase the density
     of the matrix. 
     """
 
