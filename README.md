@@ -7,7 +7,7 @@ The work we have done before can be briefly descriped as a flow chart below
 
 
 ## At present
-At this primary period, we are focusing on physical placement in order to produce a fantastic initial position, besides, we want to train our totally new GAT model to learn the knwoledege that the larger distance between the cells, the less connected wires they supposed to have.
+At this primary period, we are focusing on physical placement in order to produce a fantastic initial position, besides, we want to train our totally new GAT model to learn the knowledege that the larger distance between the cells, the less connected wires they supposed to have.
 
 
 ## The comprehensive frame includes following packages:
