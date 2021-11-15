@@ -1,10 +1,9 @@
 import torch
 from torch import nn, optim
-import random
-from model import GraphAttentionLayer
-from readdata import read_data
-from showresult import result_pic,train_test_pic
 import numpy as np
+import random
+from model.layers import GraphAttentionLayer 
+from model.load_data import read_data
 
 
 # # input the wire connection relationship, output the 2d-position

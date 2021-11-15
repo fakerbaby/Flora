@@ -1,4 +1,4 @@
-from _const import BENCHMARK, DATASET, GROUP_NUM
+from _const import THRESHOLD, ONE_WEIGHT, TWO_WEIGHT, GROUP_NUM
 from  _path import ORI_CLUS_PATH, SUB_NET_PATH, PL_PATH, EXT_CLUS_PATH, MOD_CLUS_PATH, ADJ_PATH, FEAT_MAT_PATH, RES_CLUS_PATH
 import bin.parser.group_level_parser as parser
 import numpy as np
@@ -19,9 +19,6 @@ test.load_data(sub_net_list_path, ori_cluster_path)
 test.extend_cluster(pl_path, GROUP_NUM)
 test.establish_result_cluster()
 
-THRESHOLD = 8
-ONE_WEIGHT = 2
-TWO_WEIGHT = 1
 
 test.add_conncetivity(THRESHOLD,ONE_WEIGHT,TWO_WEIGHT)
 test.save_data(ext_cluster_path, adj_path, feature_path, result_path)

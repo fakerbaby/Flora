@@ -1,7 +1,10 @@
 from pathlib import Path
-from analyse.analyse import Analyse
-from parser.defparser import Parser
-from cluster.spectrumcluster import Cluster
+from tests._const import *
+from tests._path import *
+# from analyse.analyse import Analyse
+from bin.parser.bookshelf_parser import BookshelfParser
+from bin.parser.group_level_parser import GroupLevelParser
+from bin.cluster.spectral_cluster import spectral_cluster
 import time
 
 if __name__ == '__main__':
@@ -9,21 +12,21 @@ if __name__ == '__main__':
     #                           FIRST
     # This part should be replaced by CLI or GUI
     # *******************************************************
-    PPPDef = Parser()
-    datasetName = 'ispd2014'
-    chipName = 'mgc_des_perf_2'
-    basePath = Path(Path.cwd(), 'result', datasetName, chipName)
-    netFilepath = Path(Path.cwd(), '..', 'benchmark', datasetName, chipName, 'floorplan.def')
-    group_number = 625
+    BSParser = BookshelfParser()
+    net_path, node_path, target_path = NET_PATH, NODE_PATH, FIRST_MAT_PATH 
+    subnet_path,node2matrix_path = SUB_NET_PATH, NODE2MAT_PATH
 
     # ******************************************************
     #                           SECOND
     # Read netlist file and extract the cells' connectivity info
     # ******************************************************
     print("EvolutionPlacer has been boot...")
-    saveCellName2MatrixIndexFile = Path(basePath, 'cellName2MatrixIndex.json')
-    saveSparseMatrixFile = Path(basePath, 'original_sparse_matrix.npz')
     start = time.time()
+    BSParser.load_data(net_path, node_path)
+    BSParser.net_to_matrix(target_path, node2matrix_path, subnet_path)
+    BSParser.monitor
+    # saveCellName2MatrixIndexFile = Path(basePath, 'cellName2MatrixIndex.json')
+    # saveSparseMatrixFile = Path(basePath, 'original_sparse_matrix.npz')
     # PPPDef.net2sparsematrix(netFilepath, saveSparseMatrixFile, saveCellName2MatrixIndexFile)
     end = time.time()
     print(f"All cells' connectivity sparse matrix has been constructed. Spend {end-start}s.")
@@ -33,11 +36,11 @@ if __name__ == '__main__':
     # Cluster the cells into different groups
     # ********************************************************
     print("Waiting for clustering...")
-    PPPCluster = Cluster()
-    saveClusterFile = Path(basePath, 'cluster_result'+str(group_number)+'.csv')
-    PPPCluster.spectral_cluster(group_number, saveSparseMatrixFile, saveClusterFile)
+
+    matrix_path = FIRST_MAT_PATH
+    cluster_file = ORI_CLUS_PATH
     start = time.time()
-    # PPPCluster.spectral_cluster(group_number, saveSparseMatrixFile, saveClusterFile)
+    PPPCluster = spectral_cluster(GROUP_NUM, FIRST_MAT_PATH, ORI_CLUS_PATH)
     end = time.time()
     print(f"The clustering process has completed. Spend {end-start}s.")
 
@@ -46,8 +49,13 @@ if __name__ == '__main__':
     # Get group-level connectivity information based on cluster results
     # ***************************************************************
     print("Waiting for group-level connectivity features...")
-    saveGroupLevelConnectivityFile = Path(basePath, str(group_number)+'groupConnectivity'+'.csv')
+    GLParser = GroupLevelParser()
     start = time.time()
+    GLParser.load_data(SUB_NET_PATH, ORI_CLUS_PATH)
+    GLParser.extend_cluster(PL_PATH, GROUP_NUM)
+    GLParser.establish_result_cluster()
+    GLParser.add_conncetivity(THRESHOLD, ONE_WEIGHT, TWO_WEIGHT)
+    GLParser.save_data(EXT_CLUS_PATH, ADJ_PATH, FEAT_MAT_PATH, RES_CLUS_PATH)
     # PPPDef.group_level_connection(saveClusterFile, netFilepath, saveCellName2MatrixIndexFile, saveGroupLevelConnectivityFile)
     # PPPDef.group_level_feature(saveSparseMatrixFile, saveClusterFile, saveGroupLevelConnectivityFile)
     end = time.time()
@@ -72,21 +80,21 @@ if __name__ == '__main__':
     #                           SEVENTH
     # transform the position result to del file
     # ***************************************************************
-    print("Waiting for writing position info...")
-    print("\t\tNOTE:\tThe position file has been saved to benchmark directory instead of result!")
-    positionFile = Path(basePath, str(group_number)+'groups-position.pl')
-    initialDefFile = netFilepath
-    resDefFile = Path(initialDefFile.parent, str(group_number)+'groups-position.def')
-    start = time.time()
-    PPPDef.write_group_position(initialDefFile, positionFile, resDefFile)
-    end = time.time()
-    print(f"""The group-level position file has completed. Spend {end-start}s\n\
-    Try to use Dreamplace to get finial placement.\n""")
+    # print("Waiting for writing position info...")
+    # print("\t\tNOTE:\tThe position file has been saved to benchmark directory instead of result!")
+    # positionFile = Path(basePath, str(group_number)+'groups-position.pl')
+    # initialDefFile = netFilepath
+    # resDefFile = Path(initialDefFile.parent, str(group_number)+'groups-position.def')
+    # start = time.time()
+    # PPPDef.write_group_position(initialDefFile, positionFile, resDefFile)
+    # end = time.time()
+    # print(f"""The group-level position file has completed. Spend {end-start}s\n\
+    # Try to use Dreamplace to get finial placement.\n""")
 
     #  **************************************************************
     #  对结果正确性的分析代码，真正运行时无需考虑
     #  **************************************************************
-    a = Analyse()
+    # a = Analyse()
     # clusterFile = Path(Path.cwd(), 'result', datasetName, chipName, 'cluster_result'+str(group_number)+'.csv')
     # eachGroupInfoFile = Path(Path.cwd(), 'result', datasetName, chipName, 'group_level_info.json')
     # a.check_sparseMatrix(saveSparseMatrixFile)

@@ -1,5 +1,16 @@
 import os
-from _const import BASE_DIR, BENCHMARK, DATASET
+import sys
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  #the absolute path to base directory
+sys.path.append(BASE_DIR)
+
+benchmark = ["ispd2005"]
+dataset = ["adaptec1", "adaptec2","adaptec3", "adaptec4", "bigblue1", "bigblue2", "bigblue3", "bigblue4"]
+
+
+BENCHMARK = benchmark[0] # choose the benchmark
+
+DATASET = dataset[0] # choose the dataset
+
 
 #bookshelf related
 def generate_path(benchmark_name=BENCHMARK, dataset=DATASET):
@@ -45,6 +56,7 @@ def generate_feature_mat_path(benchmark_name=BENCHMARK, dataset=DATASET):
 def generate_pl_file(benchmark_name=BENCHMARK, dataset=DATASET):
     return os.path.join(os.path.join(BASE_DIR, "benchmark",
                                      benchmark_name, dataset, dataset+".pl"))
+
 
 
 #bookshelf related path
