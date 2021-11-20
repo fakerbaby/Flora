@@ -1,7 +1,5 @@
 import numpy as np
 
-#####todo###################
-
 def read_data(path):
     """
     PAY ATTENTION: the path must obey the following rules:

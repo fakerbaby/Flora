@@ -197,7 +197,7 @@ class GroupLevelParser:
         print("extend cluster finished.")
             
             
-    def establish_result_cluster(self):
+    def cluster_fusion(self):
         """[summary]
 
         Args:
@@ -281,7 +281,7 @@ class GroupLevelParser:
         self.feature_matrix = np.delete(self.feature_matrix,self.drop_cluster,1)
         
         
-    def add_conncetivity(self, threshold, weight_1, weight_2):
+    def add_auxiliary_conncetivity(self, threshold, weight_1, weight_2):
         """[summary]
 
         Args:

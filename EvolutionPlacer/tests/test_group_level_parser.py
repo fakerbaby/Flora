@@ -17,10 +17,10 @@ test = parser.GroupLevelParser()
 
 test.load_data(sub_net_list_path, ori_cluster_path)
 test.extend_cluster(pl_path, GROUP_NUM)
-test.establish_result_cluster()
+test.cluster_fusion()
 
 
-test.add_conncetivity(THRESHOLD,ONE_WEIGHT,TWO_WEIGHT)
+test.add_auxiliary_conncetivity(THRESHOLD,ONE_WEIGHT,TWO_WEIGHT)
 test.save_data(ext_cluster_path, adj_path, feature_path, result_path)
 
 
