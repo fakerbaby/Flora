@@ -141,3 +141,5 @@ dmypy.json
 *.pl
 tmp/*
 .idea/
+*.pt
+*.png
