@@ -140,3 +140,4 @@ dmypy.json
 *.csv
 *.pl
 tmp/*
+.idea/
