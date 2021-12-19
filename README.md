@@ -1,4 +1,4 @@
-# EvolutionPlacer
+# Flare
 EvolutionPlacer is an EDA tool that help the designer to design a feasible chip fast and optimal as much as possible. Like the name itself, our placer can learn the fundamental features from different chips, and shows great capacity of transferring.
 
 The work we have done before can be briefly descriped as a flow chart below
