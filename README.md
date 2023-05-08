@@ -1,5 +1,5 @@
-# Flare
-Flare is an open source EDA tool that help the designer to design a feasible chip. This tool can learn the fundamental features from LEF/DEF files, and shows great capacity to achieve a more effcient and accurate layout during physical design period.
+# Flora
+Flora is an open source EDA tool that help the designer to design a feasible chip. This tool can learn the fundamental features from LEF/DEF files, and shows great capacity to achieve a more effcient and accurate layout during physical design period.
 
 
 ## At present
